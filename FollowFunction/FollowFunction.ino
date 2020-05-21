@@ -18,7 +18,7 @@ double phoneLocation[2];
 const int trigPinLeft = 8, echoPinLeft = 9;
 const int trigPinRight = 10, echoPinRight = 11;
 // Uncomment when a 3th HC-SR04 is available along with the other Front-functions
-// const byte trigPinFront = 9, echoPinFront = 10;
+const int trigPinFront = 9, echoPinFront = 10;
 
 // Variables for echolocation
 long duration;
@@ -49,8 +49,8 @@ void setup()
   pinMode(echoPinLeft, INPUT);
   pinMode(trigPinRight, OUTPUT);
   pinMode(echoPinRight, INPUT);
-  /* pinMode(trigPinFront, OUTPUT);
-  pinMode(echoPinFront, INPUT); */
+  pinMode(trigPinFront, OUTPUT);
+  pinMode(echoPinFront, INPUT);
 
   // Setup GPS
   ss.begin(GPSBaud);
@@ -70,6 +70,7 @@ void setup()
 void loop() 
 { 
   while (ss.available() > 0){
+    Serial.println("check");
     if (gps.encode(ss.read())){
       sensors_event_t event; 
       mag.getEvent(&event);
@@ -100,28 +101,30 @@ void loop()
       // Calculate the angle between the two locations
       double followAngle = calcAngle(myLocation, phoneLocation);
 
+      /*
+       * uncomment when testing or debugging
+      */
+      /*
       Serial.print("my angle: ");
       Serial.print(myAngle);
       Serial.println("°N");
       Serial.print("follow angle: ");
       Serial.print(followAngle);
       Serial.println("°N");
+      */
       
-      // Check where the arduino is going and adjust our position accordingly
+      // Check where the arduino is going and adjust the position accordingly
       if ((myAngle + 10) > followAngle && (myAngle - 10) < followAngle)
       {
         goStraight();
-        //Serial.println("\nForward\n");
       }
       else if (myAngle > followAngle && myAngle - followAngle < 180)
       {
         goLeft();
-        //Serial.println("\nLeft\n");
       }
       else 
       {
         goRight();
-        //Serial.println("\nRight\n");
       }
       
       delay(100);
@@ -149,25 +152,25 @@ void setPhoneLocation(){
   phoneLocation[1] = 4.020102;
 }
 
-double calcAngle(double p1[], double p2[])
+double calcAngle(double punt1[], double punt2[])
 {
-  double result = atan((p2[0]-p1[0])/(p2[1]-p1[1])) * 180 / PI;
+  double result = atan((punt2[0]-punt1[0])/(punt2[1]-punt1[1])) * 180 / PI;
   if (result < 0)
     result += 360;
   return result;
 }
 
-boolean checkCollisionLeft()
+boolean checkCollision(int trigPin, int echoPin)
 {
   // Clears the trigPin
-  digitalWrite(trigPinLeft, LOW);
+  digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPinLeft, HIGH);
+  digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
-  digitalWrite(trigPinLeft, LOW);
+  digitalWrite(trigPin, LOW);
   // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPinLeft, HIGH);
+  duration = pulseIn(echoPin, HIGH);
   // Calculating the distance
   distance = duration*0.034/2;
   if(distance < 20){
@@ -178,65 +181,29 @@ boolean checkCollisionLeft()
   }
 }
 
-boolean checkCollisionRight()
-{
-  // Clears the trigPin
-  digitalWrite(trigPinRight, LOW);
-  delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPinRight, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPinRight, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPinRight, HIGH);
-  // Calculating the distance
-  distance = duration*0.034/2;
-  if(distance < 20){
-    return false;
-  }
-  else {
-   return true;
-  }
-}
-
-/* boolean checkCollisionFront()
-{
-  // Clears the trigPin
-  digitalWrite(trigPinFront, LOW);
-  delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPinFront, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPinFront, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPinFront, HIGH);
-  // Calculating the distance
-  distance = duration*0.034/2;
-  if(distance < 20)
-    return false;
-  else
-   return true;
-}*/
-
 void goStraight()
 {
-  //if(checkCollisionFront())
-  //{
+  if(checkCollision(trigPinFront, trigPinFront))
+  {
+    //placeholder for controls of the motors
     digitalWrite(leftWheel, HIGH);
     digitalWrite(rightWheel, HIGH);
-  /*}
-  else if(checkCollisionLeft()){
+  }
+  else if(checkCollision(trigPinLeft, trigPinLeft)){
     goLeft();
   }
-  else {
+  else if(checkCollision(trigPinRight, trigPinRight)){
     goRight();
   }
-  */
+  else {
+    stopMoving();
+  }
 }
 
 void goLeft()
 {
-  if(checkCollisionLeft()) {
+  if(checkCollision(trigPinLeft, trigPinLeft)) {
+    //placeholder for controls of the motors
     digitalWrite(leftWheel, LOW);
     digitalWrite(rightWheel, HIGH);
   }
@@ -247,11 +214,19 @@ void goLeft()
 
 void goRight()
 {
-  if(checkCollisionRight()) {
+  if(checkCollision(trigPinRight, trigPinRight)) {
+    //placeholder for controls of the motors
     digitalWrite(leftWheel, HIGH);
     digitalWrite(rightWheel, LOW);
   }
   else {
     goStraight();
   }
+}
+
+void stopMoving()
+{
+  //placeholder for controls of the motors
+  digitalWrite(leftWheel, LOW);
+  digitalWrite(rightWheel, LOW);
 }
