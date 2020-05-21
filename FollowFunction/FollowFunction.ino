@@ -70,7 +70,6 @@ void setup()
 void loop() 
 { 
   while (ss.available() > 0){
-    Serial.println("check");
     if (gps.encode(ss.read())){
       sensors_event_t event; 
       mag.getEvent(&event);
